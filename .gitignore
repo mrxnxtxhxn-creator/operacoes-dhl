@@ -1,0 +1,21 @@
+Dependências do Node.js
+/node_modules
+
+Ficheiros de ambiente - para guardar chaves de API secretas
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+Logs
+logs
+.log
+npm-debug.log
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+Ficheiros de sistema operacional
+.DS_Store
+Thumbs.db
