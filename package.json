@@ -1,0 +1,23 @@
+{
+  "name": "sistema-gestao-docas",
+  "version": "1.0.0",
+  "description": "Sistema automatizado para gestão de fluxo de docas de desembarque.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "keywords": [
+    "logistica",
+    "dashboard",
+    "websocket",
+    "node"
+  ],
+  "author": "Seu Nome Aqui",
+  "license": "MIT",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "socket.io": "^4.7.5"
+  }
+}
+```
