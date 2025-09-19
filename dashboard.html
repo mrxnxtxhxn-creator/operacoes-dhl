@@ -1,195 +1,336 @@
-<!DOCTYPE html>
+
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Painel de Gestão - Consolidação</title>
+    <title>Painel de Gestão Unificado - Consolidação</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
-    <!-- Biblioteca do Socket.IO para comunicação em tempo real -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.5/socket.io.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/js/all.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
         body { font-family: 'Inter', sans-serif; background-color: #1a202c; color: #e2e8f0; }
         .card { background-color: #2d3748; border-radius: 12px; padding: 1.5rem; }
-        .chart-container-small { width: 100%; max-width: 200px; margin: 0 auto; }
-        .fila-item { animation: fadeIn 0.5s ease-in-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+        .btn-sm { padding: 0.25rem 0.75rem; font-size: 0.8rem; }
     </style>
 </head>
 <body class="p-6">
-    <div class="container mx-auto max-w-[1600px]">
-        <div class="flex justify-center items-center mb-8">
-            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/d/d3/DHL_logo.svg/2560px-DHL_logo.svg.png" alt="DHL Logo" class="h-12 mr-4 filter invert">
-            <h1 class="text-3xl font-bold text-center text-white">Painel de Gestão - Consolidação</h1>
-        </div>
-
-        <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 text-center">
-            <div class="card"><div class="text-sm font-semibold text-gray-400">Pacotes Descarregados</div><div id="pacotesDescarregados" class="text-4xl font-bold mt-2 text-green-400">0</div></div>
-            <div class="card"><div class="text-sm font-semibold text-gray-400">Caminhões à Espera</div><div id="caminhoesEspera" class="text-4xl font-bold mt-2 text-yellow-400">0</div></div>
-            <div class="card"><div class="text-sm font-semibold text-gray-400">Docas Ocupadas</div><div id="docasOcupadas" class="text-4xl font-bold mt-2 text-blue-400">0</div></div>
-            <div class="card"><div class="text-sm font-semibold text-gray-400">Caminhões Finalizados</div><div id="caminhoesFinalizados" class="text-4xl font-bold mt-2 text-red-400">0</div></div>
-        </div>
-        
-        <div class="card mb-8 text-center">
-             <h2 class="text-xl font-semibold mb-4">Controle da Operação</h2>
-             <button id="startBtn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-lg transition-transform transform hover:scale-105 text-lg">
+    <div class="container mx-auto max-w-7xl">
+        <header class="flex flex-col sm:flex-row justify-between items-center mb-8">
+            <div class="flex items-center">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/d/d3/DHL_logo.svg/2560px-DHL_logo.svg.png" alt="DHL Logo" class="h-10 mr-4 filter invert">
+                <h1 class="text-3xl font-bold text-white">Painel de Gestão</h1>
+            </div>
+            <button id="startBtn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-md transition-transform transform hover:scale-105 mt-4 sm:mt-0">
                 <i class="fas fa-play mr-2"></i> Iniciar Operação
             </button>
-            <p id="statusOperacao" class="text-gray-400 mt-2">O sistema está aguardando o início.</p>
-        </div>
+        </header>
 
+        <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 text-center">
+            <div class="card">
+                <div class="text-sm font-semibold text-gray-400">Total de Pacotes (Meta)</div>
+                <div class="flex items-center justify-center mt-2">
+                    <input id="totalPacotesInput" type="number" class="w-32 text-4xl font-bold bg-gray-800 text-center text-white rounded-md p-1" value="5000">
+                    <button id="setPacotesBtn" class="ml-2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-1 px-2 rounded-md text-sm">Definir</button>
+                </div>
+            </div>
+            <div class="card"><div class="text-sm font-semibold text-gray-400">Pacotes Descarregados</div><p id="pacotesDescarregados" class="text-4xl font-bold mt-2 text-green-400">0</p></div>
+            <div class="card"><div class="text-sm font-semibold text-gray-400">Caminhões à Espera</div><p id="caminhoesEspera" class="text-4xl font-bold mt-2 text-yellow-400">0</p></div>
+            <div class="card"><div class="text-sm font-semibold text-gray-400">Docas Ocupadas</div><p id="docasOcupadas" class="text-4xl font-bold mt-2 text-blue-400">0</p></div>
+        </div>
+        
         <div class="grid lg:grid-cols-3 gap-6">
             <div class="lg:col-span-2 space-y-6">
+                <div class="card">
+                    <h2 class="text-xl font-semibold mb-4">Adicionar Motorista à Fila</h2>
+                    <div class="flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-4 flex-wrap">
+                        <input id="nomeMotoristaInput" type="text" class="bg-gray-700 text-white rounded-md p-2" placeholder="Nome do Motorista" required>
+                        <select id="empresaSelect" class="bg-gray-700 text-white rounded-md p-2">
+                            <option>Prálog</option><option>Imediato</option><option>Hawk</option><option>Ontime</option>
+                        </select>
+                        <input id="pacotesInput" type="number" class="w-32 bg-gray-700 text-white rounded-md p-2" placeholder="Nº Pacotes" required>
+                        <button id="addMotoristaBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-md transition-transform transform hover:scale-105">Adicionar</button>
+                    </div>
+                </div>
+
                  <div class="card">
                     <h2 class="text-xl font-semibold mb-4 border-b border-gray-700 pb-2">Filas de Espera</h2>
                     <div id="filaContainer" class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                         <!-- Filas das empresas serão inseridas aqui -->
                     </div>
                 </div>
+
                 <div class="card">
                     <h2 class="text-xl font-semibold mb-4 border-b border-gray-700 pb-2">Docas de Desembarque</h2>
-                    <div class="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 mt-4" id="docasContainer">
-                        <!-- Docas serão inseridas aqui pelo JavaScript -->
+                    <div class="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 mt-4" id="docasContainer">
+                        <!-- Docas serão inseridas aqui -->
                     </div>
                 </div>
             </div>
 
             <div class="lg:col-span-1 space-y-6">
+                <div class="card">
+                    <h2 class="text-xl font-semibold mb-4 text-center">Entradas por Hora</h2>
+                    <canvas id="horariosChart" style="height: 300px;"></canvas>
+                </div>
                  <div class="card">
-                    <h2 class="text-xl font-semibold mb-4"><i class="fab fa-whatsapp text-green-400 mr-2"></i>Log de Notificações (Simulação)</h2>
+                    <h2 class="text-xl font-semibold mb-4">Log de Eventos</h2>
                     <div id="logContainer" class="space-y-2 text-sm max-h-96 overflow-y-auto bg-gray-800 p-2 rounded">
                          <p class="text-gray-500">Aguardando eventos...</p>
                     </div>
-                </div>
-                <div class="card">
-                    <h2 class="text-xl font-semibold mb-4 text-center">Entradas por Hora</h2>
-                    <canvas id="horariosChart" style="max-height: 250px;"></canvas>
                 </div>
             </div>
         </div>
     </div>
 
 <script>
-    // Conecta ao servidor de automação. Troque 'http://localhost:3000' pelo endereço do seu servidor se for diferente.
-    const socket = io("http://localhost:3000");
+    document.addEventListener('DOMContentLoaded', () => {
+        // --- ESTADO DA APLICAÇÃO ---
+        let filaDeEspera = JSON.parse(localStorage.getItem('filaDeEspera')) || [];
+        let docas = JSON.parse(localStorage.getItem('docas')) || Array(12).fill(null).map((_, i) => ({ id: i + 1, status: 'livre', motorista: null }));
+        let totalPacotesMeta = JSON.parse(localStorage.getItem('totalPacotesMeta')) || 5000;
+        let operacaoIniciada = JSON.parse(localStorage.getItem('operacaoIniciada')) || false;
+        let historicoEntradas = JSON.parse(localStorage.getItem('historicoEntradas')) || {};
+        let pacotesDescarregadosTotal = JSON.parse(localStorage.getItem('pacotesDescarregadosTotal')) || 0;
+        let logEventos = JSON.parse(localStorage.getItem('logEventos')) || [];
+        let timers = {};
 
-    const startBtn = document.getElementById('startBtn');
-    startBtn.addEventListener('click', () => {
-        socket.emit('iniciar-operacao');
-        startBtn.disabled = true;
-        startBtn.classList.remove('bg-green-600', 'hover:bg-green-700');
-        startBtn.classList.add('bg-gray-500', 'cursor-not-allowed');
-        document.getElementById('statusOperacao').textContent = 'Operação em andamento. O sistema está chamando os motoristas automaticamente.';
-    });
+        const startBtn = document.getElementById('startBtn');
 
-    // Ouve o evento 'update' vindo do servidor com todos os dados atualizados
-    socket.on('update', (data) => {
-        // Atualiza KPIs
-        document.getElementById('pacotesDescarregados').textContent = data.stats.totalPacotes;
-        document.getElementById('caminhoesEspera').textContent = data.fila.length;
-        document.getElementById('docasOcupadas').textContent = data.docas.filter(d => d.status === 'ocupada').length;
-        document.getElementById('caminhoesFinalizados').textContent = data.stats.finalizados;
+        // --- FUNÇÕES DE LÓGICA ---
+        const salvarEstado = () => {
+            localStorage.setItem('filaDeEspera', JSON.stringify(filaDeEspera));
+            localStorage.setItem('docas', JSON.stringify(docas));
+            localStorage.setItem('totalPacotesMeta', JSON.stringify(totalPacotesMeta));
+            localStorage.setItem('operacaoIniciada', JSON.stringify(operacaoIniciada));
+            localStorage.setItem('historicoEntradas', JSON.stringify(historicoEntradas));
+            localStorage.setItem('pacotesDescarregadosTotal', JSON.stringify(pacotesDescarregadosTotal));
+            localStorage.setItem('logEventos', JSON.stringify(logEventos));
+        };
 
-        // Atualiza Fila de Espera
-        const filaContainer = document.getElementById('filaContainer');
-        filaContainer.innerHTML = '';
-        
-        const empresas = ['Prálog', 'Imediato', 'Hawk', 'Ontime'];
-        if (data.fila.length === 0 && !empresas.some(empresa => data.fila.some(m => m.empresa === empresa))) {
-             filaContainer.innerHTML = '<p class="text-gray-500 text-center col-span-2">Nenhum motorista na fila.</p>';
-        } else {
-            empresas.forEach(empresa => {
-                const motoristasDaEmpresa = data.fila.filter(m => m.empresa === empresa);
+        const adicionarLog = (tipo, mensagem) => {
+            const novoLog = { tipo, mensagem, hora: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) };
+            logEventos.unshift(novoLog);
+            if (logEventos.length > 20) logEventos.pop();
+        };
+
+        const chamarProximoMotorista = () => {
+            if (!operacaoIniciada || filaDeEspera.length === 0) return;
+            const docaLivreIndex = docas.findIndex(d => d.status === 'livre');
+            if (docaLivreIndex !== -1) {
+                const proximoMotorista = filaDeEspera.shift();
+                docas[docaLivreIndex].status = 'chamado';
+                docas[docaLivreIndex].motorista = proximoMotorista;
+                adicionarLog('chamada', `Motorista ${proximoMotorista.nome} chamado para a Doca ${docas[docaLivreIndex].id}.`);
+                atualizarUI();
+            }
+        };
+
+        const iniciarDescarga = (docaId) => {
+            const doca = docas.find(d => d.id === docaId);
+            if (doca && doca.status === 'chamado') {
+                doca.status = 'ocupada';
+                doca.motorista.horaInicio = new Date().toISOString();
+                adicionarLog('sistema', `Descarga iniciada na Doca ${doca.id}.`);
+                atualizarUI();
+            }
+        };
+
+        const finalizarDescarga = (docaId) => {
+            const doca = docas.find(d => d.id === docaId);
+            if (doca && doca.status === 'ocupada') {
+                const motoristaFinalizado = doca.motorista;
+                const horaEntrada = new Date(motoristaFinalizado.horaInicio).getHours();
+                historicoEntradas[horaEntrada] = (historicoEntradas[horaEntrada] || 0) + 1;
+                pacotesDescarregadosTotal += motoristaFinalizado.pacotes;
                 
-                const empresaCard = document.createElement('div');
-                empresaCard.className = 'bg-gray-800 p-4 rounded-lg';
+                adicionarLog('finalizacao', `Descarga finalizada por ${motoristaFinalizado.nome} na Doca ${doca.id}.`);
                 
-                let motoristasHtml = '';
-                if (motoristasDaEmpresa.length > 0) {
-                    motoristasHtml = motoristasDaEmpresa.map((motorista) => {
-                        const posicaoGlobal = data.fila.findIndex(m => m.id === motorista.id) + 1;
-                        return `<li class="text-sm flex justify-between items-center py-1">
-                                    <span><span class="font-bold text-gray-400 w-6 inline-block">${posicaoGlobal}º</span> ${motorista.nome}</span>
-                                    <span class="text-xs font-mono bg-gray-700 px-2 py-1 rounded">${motorista.pacotes}</span>
-                                </li>`;
-                    }).join('');
-                } else {
-                    motoristasHtml = `<li class="text-xs text-gray-500 text-center py-1">Fila vazia</li>`;
-                }
+                doca.status = 'livre';
+                doca.motorista = null;
+                
+                atualizarUI();
+                chamarProximoMotorista();
+            }
+        };
 
-                empresaCard.innerHTML = `
-                    <h3 class="font-semibold text-center text-lg mb-2 text-gray-300">${empresa}</h3>
-                    <ul class="space-y-2">${motoristasHtml}</ul>
-                `;
-                filaContainer.appendChild(empresaCard);
-            });
-        }
-        
-        // Atualiza Status das Docas
-        const docasContainer = document.getElementById('docasContainer');
-        docasContainer.innerHTML = '';
-        data.docas.forEach(doca => {
-            let statusClass, icon, contentHtml;
+        const ocuparComCarreta = (docaId) => {
+            const doca = docas.find(d => d.id === docaId);
+            if (doca && doca.status === 'livre') {
+                doca.status = 'carreta_manual';
+                adicionarLog('sistema', `Doca ${doca.id} ocupada manualmente por uma Carreta.`);
+                atualizarUI();
+            }
+        };
 
-            if (doca.status === 'livre') {
-                statusClass = 'text-gray-500';
-                icon = 'fa-dolly';
-                contentHtml = `
-                    <i class="fa-solid ${icon} text-4xl mb-2"></i>
-                    <p class="font-semibold">Vaga</p>
-                    <p class="text-sm">Doca ${doca.id}</p>`;
-            } else if (doca.status === 'ocupada') {
-                statusClass = 'text-blue-400';
-                icon = 'fa-truck-ramp-box';
-                const tempoDecorrido = (Date.now() - new Date(doca.motorista.horaInicio).getTime()) / 1000;
-                const h = Math.floor(tempoDecorrido / 3600).toString().padStart(2, '0');
-                const m = Math.floor((tempoDecorrido % 3600) / 60).toString().padStart(2, '0');
-                const s = Math.floor(tempoDecorrido % 60).toString().padStart(2, '0');
-                contentHtml = `
-                    <i class="fa-solid ${icon} text-4xl mb-2"></i>
-                    <p class="font-bold">${doca.motorista.nome}</p>
-                    <p class="text-sm text-gray-300">Doca ${doca.id}</p>
-                    <p class="text-lg text-yellow-400 font-mono mt-1">${h}:${m}:${s}</p>`;
-            } else { // finalizado
-                statusClass = 'text-red-500';
-                icon = 'fa-check-circle';
-                contentHtml = `
-                    <i class="fa-solid ${icon} text-4xl mb-2"></i>
-                    <p class="font-semibold">Finalizado</p>
-                    <p class="text-sm">Doca ${doca.id}</p>`;
+        const finalizarCarretaManual = (docaId) => {
+            const doca = docas.find(d => d.id === docaId);
+            if (doca && doca.status === 'carreta_manual') {
+                doca.status = 'livre';
+                adicionarLog('finalizacao', `Carreta finalizada e liberada da Doca ${doca.id}.`);
+                atualizarUI();
+                chamarProximoMotorista(); // Chama o próximo caso haja alguém na fila
+            }
+        };
+
+        // --- FUNÇÕES DE RENDERIZAÇÃO ---
+        const atualizarUI = () => {
+            salvarEstado();
+            
+            // KPIs
+            document.getElementById('totalPacotesInput').value = totalPacotesMeta;
+            document.getElementById('caminhoesEspera').textContent = filaDeEspera.length;
+            document.getElementById('docasOcupadas').textContent = docas.filter(d => d.status !== 'livre').length;
+            document.getElementById('pacotesDescarregados').textContent = pacotesDescarregadosTotal;
+            if (operacaoIniciada && !startBtn.disabled) {
+                startBtn.disabled = true;
+                startBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                startBtn.innerHTML = '<i class="fas fa-check mr-2"></i> Operação Iniciada';
             }
 
-            const docaCard = document.createElement('div');
-            docaCard.className = `bg-gray-800 p-4 rounded-lg text-center ${statusClass} flex flex-col justify-center items-center min-h-[140px]`;
-            docaCard.innerHTML = contentHtml;
-            docasContainer.appendChild(docaCard);
+            // Fila de Espera
+            const filaContainer = document.getElementById('filaContainer');
+            filaContainer.innerHTML = '';
+            const empresas = ['Prálog', 'Imediato', 'Hawk', 'Ontime'];
+            if(filaDeEspera.length === 0){
+                filaContainer.innerHTML = '<p class="text-gray-500 text-center col-span-2">Nenhum motorista na fila.</p>';
+            } else {
+                empresas.forEach(empresa => {
+                    const motoristasDaEmpresa = filaDeEspera.filter(m => m.empresa === empresa);
+                    const empresaCard = document.createElement('div');
+                    empresaCard.className = 'bg-gray-800 p-4 rounded-lg';
+                    let motoristasHtml = motoristasDaEmpresa.length > 0 ? motoristasDaEmpresa.map((motorista, index) => {
+                        const posGlobal = filaDeEspera.findIndex(m => m.id === motorista.id) + 1;
+                        return `<li class="text-sm flex justify-between items-center py-1"><span><span class="font-bold text-gray-400 w-6 inline-block">${posGlobal}º</span> ${motorista.nome}</span><span class="text-xs font-mono bg-gray-700 px-2 py-1 rounded">${motorista.pacotes}</span></li>`;
+                    }).join('') : `<li class="text-xs text-gray-500 text-center py-1">Fila vazia</li>`;
+                    empresaCard.innerHTML = `<h3 class="font-semibold text-center text-lg mb-2 text-gray-300">${empresa}</h3><ul class="space-y-2">${motoristasHtml}</ul>`;
+                    filaContainer.appendChild(empresaCard);
+                });
+            }
+
+            // Docas
+            const docasContainer = document.getElementById('docasContainer');
+            docasContainer.innerHTML = '';
+            docas.forEach(doca => {
+                const docaCard = document.createElement('div');
+                let contentHtml = '';
+                if (doca.status === 'livre') {
+                    docaCard.className = 'bg-gray-800 p-4 rounded-lg text-center text-gray-500 flex flex-col justify-center items-center min-h-[160px]';
+                    contentHtml = `
+                        <i class="fa-solid fa-dolly text-4xl mb-2"></i>
+                        <p class="font-semibold">Vaga</p>
+                        <p class="text-sm">Doca ${doca.id}</p>
+                        <div class="mt-2">
+                            <button class="btn-sm bg-gray-600 hover:bg-gray-700 rounded text-white" onclick="app.ocuparCarreta(${doca.id})">Ocupar com Carreta</button>
+                        </div>`;
+                } else if (doca.status === 'carreta_manual') {
+                     docaCard.className = 'bg-gray-800 p-4 rounded-lg text-center text-red-400 flex flex-col justify-center items-center min-h-[160px]';
+                     contentHtml = `
+                        <p class="text-xs font-bold text-red-400 mb-1">CARRETA</p>
+                        <i class="fa-solid fa-truck-moving text-4xl mb-2"></i>
+                        <p class="font-bold">Ocupada Manualmente</p>
+                        <p class="text-sm text-gray-300">Doca ${doca.id}</p>
+                        <div class="mt-2">
+                            <button class="btn-sm bg-red-600 hover:bg-red-700 rounded text-white" onclick="app.finalizarCarreta(${doca.id})">Finalizar</button>
+                        </div>`;
+                } else {
+                    const motorista = doca.motorista;
+                    let timerHtml = '';
+                    if (doca.status === 'ocupada') {
+                        const tempoDecorrido = (Date.now() - new Date(motorista.horaInicio).getTime()) / 1000;
+                        const h = Math.floor(tempoDecorrido / 3600).toString().padStart(2, '0');
+                        const m = Math.floor((tempoDecorrido % 3600) / 60).toString().padStart(2, '0');
+                        const s = Math.floor(tempoDecorrido % 60).toString().padStart(2, '0');
+                        timerHtml = `<p class="text-lg text-yellow-400 font-mono mt-1">${h}:${m}:${s}</p>`;
+                    }
+
+                    const vehicleIcon = 'fa-truck-ramp-box';
+
+                    docaCard.className = 'bg-gray-800 p-4 rounded-lg text-center text-blue-400 flex flex-col justify-center items-center min-h-[160px]';
+                    contentHtml = `
+                        <i class="fa-solid ${vehicleIcon} text-4xl mb-2"></i>
+                        <p class="font-bold">${motorista.nome}</p>
+                        <p class="text-sm text-gray-300">Doca ${doca.id}</p>
+                        ${timerHtml}
+                        <div class="mt-2 flex gap-2">
+                            ${doca.status === 'chamado' ? `<button class="btn-sm bg-green-600 hover:bg-green-700 rounded text-white" onclick="app.iniciar(${doca.id})">Iniciar</button>` : ''}
+                            ${doca.status === 'ocupada' ? `<button class="btn-sm bg-red-600 hover:bg-red-700 rounded text-white" onclick="app.finalizar(${doca.id})">Finalizar</button>` : ''}
+                        </div>`;
+                }
+                docaCard.innerHTML = contentHtml;
+                docasContainer.appendChild(docaCard);
+            });
+            
+            // Log de Eventos
+            const logContainer = document.getElementById('logContainer');
+            logContainer.innerHTML = logEventos.map(item => `<div class="flex items-start"><i class="fas fa-info-circle text-gray-500 mr-3 mt-1"></i><div><span class="font-bold text-gray-400">${item.hora}</span>: ${item.mensagem}</div></div>`).join('') || '<p class="text-gray-500">Aguardando eventos...</p>';
+
+            // Gráfico
+            horariosChart.data.datasets[0].data = Array.from({ length: 24 }, (_, i) => historicoEntradas[i] || 0);
+            horariosChart.update();
+        };
+
+        // --- EVENT LISTENERS ---
+        startBtn.addEventListener('click', () => {
+            if (!operacaoIniciada) {
+                operacaoIniciada = true;
+                adicionarLog('sistema', 'Operação iniciada pelo gestor.');
+                chamarProximoMotorista();
+                atualizarUI();
+            }
+        });
+
+        document.getElementById('setPacotesBtn').addEventListener('click', () => {
+            const input = document.getElementById('totalPacotesInput');
+            const novaMeta = parseInt(input.value);
+
+            if (novaMeta && novaMeta > 0) {
+                totalPacotesMeta = novaMeta;
+                adicionarLog('sistema', `Meta de pacotes atualizada para ${novaMeta}.`);
+                atualizarUI();
+            } else {
+                alert('Por favor, insira um número válido para a meta.');
+                input.value = totalPacotesMeta; // Reverte para o valor antigo se a entrada for inválida
+            }
+        });
+
+        document.getElementById('addMotoristaBtn').addEventListener('click', () => {
+            const nomeInput = document.getElementById('nomeMotoristaInput');
+            const pacotesInput = document.getElementById('pacotesInput');
+            const nome = nomeInput.value.trim();
+            const pacotes = parseInt(pacotesInput.value);
+
+            if (nome && pacotes > 0) {
+                const novoMotorista = {
+                    id: Date.now(),
+                    nome: nome,
+                    empresa: document.getElementById('empresaSelect').value,
+                    pacotes: pacotes,
+                };
+                filaDeEspera.push(novoMotorista);
+                adicionarLog('registro', `Motorista ${nome} entrou na fila com ${pacotes} pacotes.`);
+                nomeInput.value = '';
+                pacotesInput.value = '';
+                atualizarUI();
+                chamarProximoMotorista();
+            } else {
+                alert('Por favor, preencha o nome e um número de pacotes válido.');
+            }
         });
         
-        // Atualiza Log de Notificações
-        const logContainer = document.getElementById('logContainer');
-        logContainer.innerHTML = '';
-        data.logNotificacoes.forEach(log => {
-           logContainer.innerHTML = `<div class="bg-gray-700 p-2 rounded mb-1">
-                <p class="text-xs text-gray-400">${new Date(log.timestamp).toLocaleTimeString()}</p>
-                <p>${log.message}</p>
-            </div>` + logContainer.innerHTML;
-        });
-
-        // Atualiza Gráficos
-        horariosChart.data.datasets[0].data = Array.from({ length: 24 }, (_, i) => data.stats.entradasPorHora[i] || 0);
-        horariosChart.update();
-    });
-
-    let horariosChart;
-    window.onload = () => {
-        horariosChart = new Chart(document.getElementById('horariosChart').getContext('2d'), {
+        // --- INICIALIZAÇÃO ---
+        const horariosChart = new Chart(document.getElementById('horariosChart').getContext('2d'), {
             type: 'bar',
             data: { labels: Array.from({ length: 24 }, (_, i) => `${i}h`), datasets: [{ label: 'Entradas de Caminhões', data: [], backgroundColor: '#805ad5' }] },
-            options: { responsive: true, maintainAspectRatio: false, scales: { x: { ticks: { color: 'white' }, grid: { color: '#4a5568' } }, y: { beginAtZero: true, ticks: { color: 'white' }, grid: { color: '#4a5568' } } }, plugins: { legend: { display: false } } }
+            options: { responsive: true, maintainAspectRatio: true, scales: { x: { ticks: { color: 'white' }, grid: { color: '#4a5568' } }, y: { beginAtZero: true, ticks: { color: 'white' }, grid: { color: '#4a5568' } } }, plugins: { legend: { display: false } } }
         });
-    };
+        
+        // Expõe funções para os botões inline
+        window.app = { iniciar: iniciarDescarga, finalizar: finalizarDescarga, ocuparCarreta: ocuparComCarreta, finalizarCarreta: finalizarCarretaManual };
+        
+        setInterval(atualizarUI, 1000); // Atualiza a UI a cada segundo para os timers
+        atualizarUI(); // Renderização inicial
+    });
 </script>
 </body>
 </html>
